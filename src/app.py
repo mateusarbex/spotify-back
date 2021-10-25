@@ -5,6 +5,7 @@ import spotipy
 import os
 import json
 
+
 from flask import Flask, redirect,request,session
 from flask import request
 from flask_cors import CORS
@@ -15,8 +16,12 @@ from spotipy.oauth2 import SpotifyOAuth
 
 session_token = ''
 
-with open('session.json','r') as json_file:
-    session_token = json.load(json_file)
+song_queue = []
+try:
+    with open('session.json') as json_file:
+        session_token = json.load(json_file)
+except:
+    print('error')
 
 
 load_dotenv()
@@ -44,15 +49,25 @@ def get_user():
         auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
+
 @app.route('/add_to_queue',methods=['POST'])
 def add_to_queue():
+    global song_queue
     authorized = get_token()
     if not authorized:
         return redirect('/')
+    ip = ''
+    if request.headers.getlist("X-Forwarded-For"):
+        ip = request.headers.getlist("X-Forwarded-For")[0]
+    else:
+        ip = request.remote_addr
     sp = spotipy.Spotify(auth=session_token['access_token'])
     data = request.get_json()
     sp.add_to_queue(data['uri'])
-    return 'Track adicionada com sucesso'
+    song_queue.append(ip)
+    if(song_queue.count(ip)>3):
+        return 'Não é possível adicionar mais músicas'
+    return json.dumps(song_queue)
 
 @app.route('/callback')
 def callback():
@@ -65,6 +80,7 @@ def callback():
     with open('session.json','w') as outfile:
         json.dump(session_token,outfile)
     return redirect("http://localhost:3000")
+
 
 def get_token():
     global session_token
