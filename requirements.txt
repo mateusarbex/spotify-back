@@ -1,0 +1,5 @@
+flask
+redis
+spotipy
+python-dotenv
+flask-cors
