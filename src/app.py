@@ -26,7 +26,7 @@ except:
 
 load_dotenv()
 
-scope = "user-modify-playback-state"
+scope = "user-modify-playback-state user-read-playback-state user-read-private"
 id = os.environ.get('SPOTIPY_CLIENT_ID')    
 secret = os.environ.get('SPOTIPY_CLIENT_SECRET')
 redirect_ui = os.environ.get('SPOTIPY_REDIRECT_URI')
@@ -44,11 +44,11 @@ cache = redis.Redis(host='redis', port=6379)
 
 @app.route('/')
 def get_user():
-    if not get_token():
-        sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect_ui, scope = scope)
-        auth_url = sp_oauth.get_authorize_url()
+    sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect_ui, scope = scope)
+    auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
-
+def get_ip(n):
+    return n['ip']
 
 @app.route('/add_to_queue',methods=['POST'])
 def add_to_queue():
@@ -62,11 +62,13 @@ def add_to_queue():
     else:
         ip = request.remote_addr
     sp = spotipy.Spotify(auth=session_token['access_token'])
+    
     data = request.get_json()
     sp.add_to_queue(data['uri'])
-    song_queue.append(ip)
-    if(song_queue.count(ip)>3):
-        return 'Não é possível adicionar mais músicas'
+    song_queue.append({'song':data['uri'],'ip':ip})
+    ips = list(map(get_ip,song_queue))
+    if ips.count(ip)>3:
+        return 'Não foi possível adicionar mais músicas'
     return json.dumps(song_queue)
 
 @app.route('/callback')
