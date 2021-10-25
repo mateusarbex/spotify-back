@@ -3,6 +3,7 @@ import sys
 import redis
 import spotipy
 import os
+import json
 
 from flask import Flask, redirect,request,session
 from flask import request
@@ -12,10 +13,10 @@ import requests
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 
-
-
-
 session_token = ''
+
+with open('session.json','r') as json_file:
+    session_token = json.load(json_file)
 
 
 load_dotenv()
@@ -61,7 +62,8 @@ def callback():
     token_info = sp_oauth.get_access_token(code)
     session_token = token_info
     # Saving the access token along with all other token related info
-    session["token_info"] = token_info
+    with open('session.json','w') as outfile:
+        json.dump(session_token,outfile)
     return redirect("http://localhost:3000")
 
 def get_token():
