@@ -26,7 +26,7 @@ except:
 
 load_dotenv()
 
-scope = "user-modify-playback-state user-read-playback-state user-read-private"
+scope = "user-modify-playback-state user-read-playback-state user-read-private user-read-recently-played"
 id = os.environ.get('SPOTIPY_CLIENT_ID')    
 secret = os.environ.get('SPOTIPY_CLIENT_SECRET')
 redirect_ui = os.environ.get('SPOTIPY_REDIRECT_URI')
@@ -50,6 +50,18 @@ def get_user():
 def get_ip(n):
     return n['ip']
 
+def get_played_tracks():
+    sp = spotipy.Spotify(auth=session_token['access_token'])
+    songs_played = sp.current_user_recently_played()['items']
+    return list(map(lambda x: x['track']['uri'],songs_played))
+
+@app.route('/get_recent_tracks')
+def get_recent_tracks():
+    if not get_token():
+        redirect('/')
+    sp = spotipy.Spotify(auth=session_token['access_token'])
+    return json.dumps(sp.current_user_recently_played()['items'][0])
+
 @app.route('/add_to_queue',methods=['POST'])
 def add_to_queue():
     global song_queue
@@ -61,14 +73,23 @@ def add_to_queue():
         ip = request.headers.getlist("X-Forwarded-For")[0]
     else:
         ip = request.remote_addr
-    sp = spotipy.Spotify(auth=session_token['access_token'])
-    
+    sp = spotipy.Spotify(auth=session_token['access_token']) 
     data = request.get_json()
-    sp.add_to_queue(data['uri'])
-    song_queue.append({'song':data['uri'],'ip':ip})
+    
+    current_track = get_current_track()['uri']
+
+    try:
+        if song_queue:  
+            index = list(map(lambda x: x['song'],song_queue)).index(current_track)
+            song_queue = song_queue[index:]
+    except:
+        if song_queue:
+            song_queue.append({'song':current_track,'ip':'none'})
     ips = list(map(get_ip,song_queue))
     if ips.count(ip)>3:
         return 'Não foi possível adicionar mais músicas'
+    song_queue.append({'song':data['uri'],'ip':ip}) 
+    sp.add_to_queue(data['uri'])
     return json.dumps(song_queue)
 
 @app.route('/callback')
@@ -83,6 +104,22 @@ def callback():
         json.dump(session_token,outfile)
     return redirect("http://localhost:3000")
 
+@app.route('/playback')
+def get_current_track():
+    if not get_token():
+         return redirect('/')
+    sp = spotipy.Spotify(auth=session_token['access_token'])
+    current_playback = sp.current_playback()
+    if current_playback:
+        return current_playback['item']
+    return 'No tracks being played'
+
+# @app.route('/playlist')
+# def get_current_playlist():
+#     if not get_token():
+#         return redirect('/')
+#     sp = spotipy.Spotify(auth=session_token['access_token'])
+#     sp.current_pla
 
 def get_token():
     global session_token
