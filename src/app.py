@@ -6,7 +6,7 @@ import os
 import json
 
 
-from flask import Flask, redirect,request,session
+from flask import Flask, redirect,request,session,abort,Response
 from flask import request
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -16,7 +16,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 session_token = ''
 
-song_queue = []
+song_queue = [{}]
 try:
     with open('session.json') as json_file:
         session_token = json.load(json_file)
@@ -74,23 +74,24 @@ def add_to_queue():
     else:
         ip = request.remote_addr
     sp = spotipy.Spotify(auth=session_token['access_token']) 
-    data = request.get_json()
-    
+    data = request.get_json() 
     current_track = get_current_track()['uri']
-
     try:
-        if song_queue:  
-            index = list(map(lambda x: x['song'],song_queue)).index(current_track)
-            song_queue = song_queue[index:]
+        index = list(map(lambda x: x['song'],song_queue)).index(current_track)
+        song_queue = song_queue[index:]
     except:
-        if song_queue:
             song_queue.append({'song':current_track,'ip':'none'})
     ips = list(map(get_ip,song_queue))
-    if ips.count(ip)>3:
-        return 'Não foi possível adicionar mais músicas'
-    song_queue.append({'song':data['uri'],'ip':ip}) 
-    sp.add_to_queue(data['uri'])
-    return json.dumps(song_queue)
+    if ips.count(ip)>=3:
+        return abort((Response('Número máximo excedido')))
+    song_queue.append({'song':data['uri'],'ip':ip})
+    try:
+        sp.add_to_queue(data['uri'])
+        return json.dumps(song_queue)
+    except:
+        return abort(Response('Nenhum dispositivo em modo play encontrado'))
+        
+    
 
 @app.route('/callback')
 def callback():
@@ -112,7 +113,7 @@ def get_current_track():
     current_playback = sp.current_playback()
     if current_playback:
         return current_playback['item']
-    return 'No tracks being played'
+    return abort(Response('Nenhum dispotivo encontrado'))
 
 # @app.route('/playlist')
 # def get_current_playlist():
