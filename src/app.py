@@ -16,7 +16,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 session_token = ''
 
-song_queue = [{}]
+song_queue = []
 try:
     with open('session.json') as json_file:
         session_token = json.load(json_file)
@@ -47,6 +47,7 @@ def get_user():
     sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect_ui, scope = scope)
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
+
 def get_ip(n):
     return n['ip']
 
@@ -76,11 +77,13 @@ def add_to_queue():
     sp = spotipy.Spotify(auth=session_token['access_token']) 
     data = request.get_json() 
     current_track = get_current_track()['uri']
+    print(song_queue)
     try:
         index = list(map(lambda x: x['song'],song_queue)).index(current_track)
         song_queue = song_queue[index:]
     except:
             song_queue.append({'song':current_track,'ip':'none'})
+    print(song_queue)
     ips = list(map(get_ip,song_queue))
     if ips.count(ip)>=3:
         return abort((Response('Número máximo excedido')))
