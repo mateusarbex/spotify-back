@@ -4,7 +4,5 @@ services:
     build: .
     volumes:
       - .:/src
-    environment:
-      FLASK_ENV: development
   redis:
     image: "redis:alpine"
