@@ -56,6 +56,15 @@ def get_played_tracks():
     songs_played = sp.current_user_recently_played()['items']
     return list(map(lambda x: x['track']['uri'],songs_played))
 
+@app.route('/get_current_user')
+def get_current_user():
+    authorized = get_token()
+    if not authorized:
+        return redirect('/')
+    sp = spotipy.Spotify(auth=session_token['access_token']) 
+    return json.dumps(sp.current_user())
+    
+
 @app.route('/get_recent_tracks')
 def get_recent_tracks():
     if not get_token():
