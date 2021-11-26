@@ -76,11 +76,6 @@ def add_to_queue():
     authorized = get_token()
     if not authorized:
         return redirect('/')
-    ip = ''
-    if request.headers.getlist("X-Forwarded-For"):
-        ip = request.headers.getlist("X-Forwarded-For")[0]
-    else:
-        ip = request.remote_addr
     sp = spotipy.Spotify(auth=session_token['access_token']) 
     data = request.get_json() 
     current_track = get_current_track()['uri']
@@ -89,11 +84,8 @@ def add_to_queue():
         index = list(map(lambda x: x['song'],song_queue)).index(current_track)
         song_queue = song_queue[index:]
     except:
-            song_queue.append({'song':current_track,'ip':'none'})
-    print(song_queue)
-    ips = list(map(get_ip,song_queue))
-
-    song_queue.append({'song':data['uri'],'ip':ip})
+            song_queue.append({'song':current_track})
+    song_queue.append({'song':data['uri']})
     try:
         sp.add_to_queue(data['uri'])
         return json.dumps(song_queue)
