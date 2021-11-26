@@ -92,8 +92,7 @@ def add_to_queue():
             song_queue.append({'song':current_track,'ip':'none'})
     print(song_queue)
     ips = list(map(get_ip,song_queue))
-    if ips.count(ip)>=3:
-        return abort((Response('Número máximo excedido')))
+
     song_queue.append({'song':data['uri'],'ip':ip})
     try:
         sp.add_to_queue(data['uri'])
