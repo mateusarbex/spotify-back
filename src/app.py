@@ -17,12 +17,8 @@ from spotipy.oauth2 import SpotifyOAuth
 session_token = ''
 
 song_queue = []
-try:
-    with open('session.json') as json_file:
-        session_token = json.load(json_file)
-except:
-    print('error')
 
+print(session_token)
 
 load_dotenv()
 
@@ -55,6 +51,14 @@ def get_played_tracks():
     sp = spotipy.Spotify(auth=session_token['access_token'])
     songs_played = sp.current_user_recently_played()['items']
     return list(map(lambda x: x['track']['uri'],songs_played))
+
+@app.route('/user')
+def get_current_user():
+    if not get_token():
+        redirect('/')
+    print(session_token)
+    sp = spotipy.Spotify(auth=session_token['access_token'])
+    return json.dumps(sp.current_user())
 
 @app.route('/get_recent_tracks')
 def get_recent_tracks():
@@ -103,10 +107,7 @@ def callback():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session_token = token_info
-    # Saving the access token along with all other token related info
-    with open('session.json','w') as outfile:
-        json.dump(session_token,outfile)
-    return redirect("http://localhost:3000")
+    return redirect("http://localhost:5000/user")
 
 @app.route('/playback')
 def get_current_track():
@@ -131,10 +132,8 @@ def get_token():
     if not session_token:
         return token_valid
     now = int(time.time())
-    is_token_expired = session_token['expires_at'] - now < 60
-    if (is_token_expired):
-        sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect, scope = scope)
-        session_token = sp_oauth.refresh_access_token(session_token['refresh_token'])
+    sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect, scope = scope)
+    session_token = sp_oauth.refresh_access_token(session_token['refresh_token'])
     token_valid = True
     return token_valid
 
