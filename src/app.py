@@ -103,6 +103,7 @@ def add_to_queue():
 @app.route('/callback')
 def callback():
     global session_token
+    session_token = ''
     sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect_ui, scope = scope)
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
