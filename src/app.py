@@ -107,7 +107,7 @@ def callback():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session_token = token_info
-    return redirect("http://redes-spotify-back.herokuapp.com//user")
+    return redirect("http://redes-spotify-back.herokuapp.com/user")
 
 @app.route('/playback')
 def get_current_track():
