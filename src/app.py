@@ -107,6 +107,7 @@ def callback():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session_token = token_info
+    sp = spotipy.Spotify(auth=session_token['access_token'])
     return redirect("http://redes-spotify-back.herokuapp.com/user")
 
 @app.route('/playback')
