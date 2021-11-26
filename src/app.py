@@ -40,7 +40,7 @@ cache = redis.Redis(host='redis', port=6379)
 
 @app.route('/')
 def get_user():
-    sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect_ui, scope = scope)
+    sp_oauth = spotipy.oauth2.SpotifyOAuth(client_id = id, client_secret = secret, redirect_uri = redirect_ui, scope = scope,show_dialog=True)
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
