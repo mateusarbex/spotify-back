@@ -108,7 +108,7 @@ def callback():
     token_info = sp_oauth.get_access_token(code)
     session_token = token_info
     sp = spotipy.Spotify(auth=session_token['access_token'])
-    return redirect("http://spotify-queuer.herokuapp.com/user")
+    return redirect("http://spotify-queuer.herokuapp.com/")
 
 @app.route('/playback')
 def get_current_track():
