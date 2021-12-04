@@ -4,21 +4,20 @@ import redis
 import spotipy
 import os
 import json
+import uuid
 
 
 from flask import Flask, redirect,request,session,abort,Response
-from flask import request
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
+import random
 
 session_token = ''
 
 song_queue = []
-
-print(session_token)
 
 load_dotenv()
 
@@ -29,14 +28,23 @@ redirect_ui = os.environ.get('SPOTIPY_REDIRECT_URI')
 api_base = os.environ.get('API_BASE')
 
 
+
                                                
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 app = Flask(__name__)
-CORS(app)
+CORS(app,supports_credentials=True)
 
 app.secret_key = 'spoti-back'
 cache = redis.Redis(host='redis', port=6379)
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    try:
+        print(session['uuid'])
+    except:
+        session['uuid'] = uuid.uuid4()
 
 @app.route('/')
 def get_user():
@@ -132,6 +140,12 @@ def get_token():
     session_token = sp_oauth.refresh_access_token(session_token['refresh_token'])
     token_valid = True
     return token_valid
+
+
+@app.route('/print-session')
+def print_session():
+   token = session['uuid']
+   return f'{token}'
 
 @app.route('/search')
 def query():
