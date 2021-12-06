@@ -29,6 +29,7 @@ api_base = os.environ.get('API_BASE')
 
 
 
+
                                                
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
@@ -44,7 +45,7 @@ def make_session_permanent():
     try:
         print(session['uuid'])
     except:
-        session['uuid'] = uuid.uuid4()
+        session['uuid'] = uuid.uuid4().hex
 
 @app.route('/')
 def get_user():
@@ -87,20 +88,33 @@ def add_to_queue():
     sp = spotipy.Spotify(auth=session_token['access_token']) 
     data = request.get_json() 
     current_track = get_current_track()['uri']
-    print(song_queue)
     try:
         index = list(map(lambda x: x['song'],song_queue)).index(current_track)
         song_queue = song_queue[index:]
     except:
-            song_queue.append({'song':current_track})
-    song_queue.append({'song':data['uri']})
+        song_queue.append({'song':current_track,'id':uuid.uuid4().hex})
     try:
-        sp.add_to_queue(data['uri'])
-        return json.dumps(song_queue)
+        if(count_id()<3):
+            sp.add_to_queue(data['uri'])
+            song_queue.append({'song':data['uri'],'id':session['uuid']})
+            return json.dumps({'message':'sucesso','status':200})
+        return f'Número máximo excedido'
     except:
         return abort(Response('Nenhum dispositivo em modo play encontrado'))
         
-    
+def count_id():
+    try:
+        count = list(map(lambda x: x['id'],song_queue)).count(session['uuid'])
+        return count
+    except:
+        print('deu erro')
+        return 0
+
+@app.route('/count')
+def count_route():
+    count = count_id()
+    return f'{count} many times'
+
 
 @app.route('/callback')
 def callback():
